@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Virtual envs
+.venv/
+venv/
+env/
+
+# Models / caches
+.cache/
+*.onnx
+*.pdmodel
+*.pdiparams
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Local sample / personal documents — keep them out of the public repo.
+# (The example scripts auto-discover whatever you drop here.)
+examples/*.pdf
+examples/*.png
+examples/*.jpg
+examples/*.jpeg
+examples/*.webp
+examples/*.tif
+examples/*.tiff
+

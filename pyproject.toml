@@ -1,0 +1,108 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "ocrcontext"
+version = "0.1.0"
+description = "Decoupled, LLM-agnostic document OCR + structured extraction. Vision and LLM parsing in 3 lines of code."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+authors = [{ name = "Bahadır Karslı", email = "bahadrkrsl@outlook.com" }]
+maintainers = [{ name = "Bahadır Karslı", email = "bahadrkrsl@outlook.com" }]
+keywords = ["ocr", "paddleocr", "langchain", "document-ai", "structured-extraction", "pdf"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Scientific/Engineering :: Image Recognition",
+    "Topic :: Text Processing :: Linguistic",
+    "Typing :: Typed",
+]
+
+# Core stays lightweight. Heavy engines + LLM providers are opt-in extras.
+# Only `langchain-core` is required for the LLM layer; users bring their own
+# provider package (langchain-openai, langchain-anthropic, langchain-ollama, ...).
+dependencies = [
+    "pydantic>=2.5",
+    "langchain-core>=0.3",
+    "pymupdf>=1.23",
+    "Pillow>=9.0",
+    "numpy>=1.24",
+]
+
+[project.optional-dependencies]
+# Printed text + scanned PDFs (PaddleOCR on CPU/GPU). Also pulls OpenCV for preprocessing.
+paddle = [
+    "paddleocr>=2.7.0.3",
+    "paddlepaddle>=2.6",
+    "opencv-python-headless>=4.8",
+]
+# Handwriting fallback engine (Microsoft TrOCR via Transformers).
+# OpenCV is needed for line-band preprocessing on the handwriting path too.
+trocr = [
+    "torch>=2.1",
+    "torchvision>=0.16",
+    "transformers>=4.40",
+    "accelerate>=0.27",
+    "sentencepiece>=0.1.99",
+    "opencv-python-headless>=4.8",
+]
+# Handwriting primary engine (Google Cloud Vision).
+vision = [
+    "google-cloud-vision>=3.8.1",
+    "opencv-python-headless>=4.8",
+]
+all = [
+    "ocrcontext[paddle,trocr,vision]",
+]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.5",
+    "build>=1.2",
+    "twine>=5.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/bahadirkarsli/ocrcontext"
+Repository = "https://github.com/bahadirkarsli/ocrcontext"
+Issues = "https://github.com/bahadirkarsli/ocrcontext/issues"
+Changelog = "https://github.com/bahadirkarsli/ocrcontext/blob/main/CHANGELOG.md"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/ocrcontext"]
+
+[tool.hatch.build.targets.sdist]
+# Ship the sources, tests, examples and docs in the source distribution.
+include = [
+    "src/ocrcontext",
+    "tests",
+    "examples",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE",
+]
+# Keep heavy / local-only artifacts out of the distribution.
+exclude = [
+    "**/__pycache__",
+    "examples/*.pdf",
+    "examples/*.png",
+    "examples/*.jpg",
+    "examples/*.jpeg",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
