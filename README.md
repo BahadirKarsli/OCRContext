@@ -90,6 +90,29 @@ Refinement fixes OCR errors **without** paraphrasing, translating, or inventing 
 and IBANs are masked before the model sees them and restored verbatim after; output that drifts too
 far from the source is rejected in favour of the raw text.
 
+Set your API key once in the environment — `langchain-openai` (and every other provider) picks it
+up automatically:
+
+```bash
+# Linux / macOS
+export OPENAI_API_KEY="sk-..."
+
+# Windows (PowerShell)
+$env:OPENAI_API_KEY = "sk-..."
+
+# Windows (CMD)
+set OPENAI_API_KEY=sk-...
+```
+
+Or pass it inline if you prefer (useful in notebooks):
+
+```python
+from langchain_openai import ChatOpenAI
+ChatOpenAI(api_key="sk-...", model="gpt-4o")
+```
+
+Then:
+
 ```python
 from langchain_openai import ChatOpenAI
 from ocrcontext import Analyzer
