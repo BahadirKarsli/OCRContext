@@ -26,6 +26,9 @@ env/
 .idea/
 .vscode/
 
+# Claude session memory — never publish
+CLAUDE.md
+
 # Local sample / personal documents — keep them out of the public repo.
 # (The example scripts auto-discover whatever you drop here.)
 examples/*.pdf
