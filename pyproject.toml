@@ -72,10 +72,10 @@ dev = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/bahadirkarsli/ocrcontext"
-Repository = "https://github.com/bahadirkarsli/ocrcontext"
-Issues = "https://github.com/bahadirkarsli/ocrcontext/issues"
-Changelog = "https://github.com/bahadirkarsli/ocrcontext/blob/main/CHANGELOG.md"
+Homepage = "https://github.com/BahadirKarsli/OCRContext"
+Repository = "https://github.com/BahadirKarsli/OCRContext"
+Issues = "https://github.com/BahadirKarsli/OCRContext/issues"
+Changelog = "https://github.com/BahadirKarsli/OCRContext/blob/main/CHANGELOG.md"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/ocrcontext"]

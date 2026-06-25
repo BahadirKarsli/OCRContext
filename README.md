@@ -6,6 +6,7 @@
 
 Decoupled, LLM-agnostic document OCR + structured extraction. No web server, no vendor lock-in.
 
+[![CI](https://github.com/BahadirKarsli/OCRContext/actions/workflows/ci.yml/badge.svg)](https://github.com/BahadirKarsli/OCRContext/actions/workflows/ci.yml)
 [![PyPI version](https://img.shields.io/pypi/v/ocrcontext.svg?color=blue)](https://pypi.org/project/ocrcontext/)
 [![Python versions](https://img.shields.io/pypi/pyversions/ocrcontext.svg)](https://pypi.org/project/ocrcontext/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -235,8 +236,8 @@ analyzer = Analyzer(llm=..., config=cfg)
 ## Development
 
 ```bash
-git clone https://github.com/bahadirkarsli/ocrcontext
-cd ocrcontext
+git clone https://github.com/BahadirKarsli/OCRContext
+cd OCRContext
 pip install -e '.[dev]'
 pytest            # runs without GPU/network — engines and LLM are faked
 ruff check .
