@@ -26,18 +26,24 @@ print(result.text)
 FastAPI/Next.js stack into a pure, pip-installable library. It does the hard parts — OCR engine
 routing, fidelity-first LLM cleanup, and schema-based extraction — and gets out of your way.
 
-## Why ocrcontext
+## Why OCR Context
 
 - **🚀 3-line DX** — instantiate, pass a file, get a result. That's the whole API surface.
+  
 - **🔌 LLM-agnostic** — inject *any* LangChain chat model (OpenAI, Anthropic, Ollama, local). Only
   `langchain-core` is required; you bring the provider.
+
 - **🧠 Fidelity-first refinement** — fixes OCR errors without paraphrasing, translating, or inventing.
   Emails/URLs/IBANs are frozen so the model can't "correct" them, and drifting output is rejected.
+  
 - **📐 Structured extraction** — hand it a Pydantic schema, get a populated instance back via
   `with_structured_output`.
+  
 - **⚡ Resource-efficient** — heavy models (PaddleOCR, TrOCR) load lazily and are cached as
   process-wide singletons. They never reload per call.
+  
 - **🪶 Lightweight base install** — engines are opt-in extras. Core stays tiny.
+  
 - **🪟 Windows-hardened** — survives non-ASCII usernames and the PaddlePaddle 3.x CPU oneDNN issue
   out of the box.
 
