@@ -1,6 +1,6 @@
 <div align="center">
 
-# ocrcontext
+# OCR Context
 
 **Turn any PDF or image into clean text — or a typed Pydantic model — in three lines.**
 
