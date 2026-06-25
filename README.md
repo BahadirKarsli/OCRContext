@@ -143,7 +143,7 @@ Then:
 from langchain_openai import ChatOpenAI
 from ocrcontext import Analyzer
 
-analyzer = Analyzer(llm=ChatOpenAI(model="gpt-4o"), lang="tr")
+analyzer = Analyzer(llm=ChatOpenAI(model="gpt-4o"), lang="en")
 result = analyzer.analyze("handwritten_note.jpg", handwriting=True)
 
 print(result.text)        # refined
