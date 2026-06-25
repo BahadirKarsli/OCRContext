@@ -59,13 +59,19 @@ routing, fidelity-first LLM cleanup, and schema-based extraction — and gets ou
 
 ## Install
 
-```bash
-pip install ocrcontext              # core only (PDF text layer + the full API surface)
-pip install 'ocrcontext[paddle]'    # printed text + scanned PDFs (PaddleOCR)
-pip install 'ocrcontext[trocr]'     # handwriting fallback (Microsoft TrOCR)
-pip install 'ocrcontext[vision]'    # handwriting primary (Google Cloud Vision)
-pip install 'ocrcontext[all]'       # everything
-```
+Engines are opt-in so your base install stays small. Pick what you need:
+
+| Install command | What you get |
+|---|---|
+| `pip install ocrcontext` | Digital PDFs only (text-layer extraction via PyMuPDF — no OCR engine, no API key) |
+| `pip install 'ocrcontext[paddle]'` | + images, scanned PDFs (PaddleOCR, CPU/GPU) |
+| `pip install 'ocrcontext[trocr]'` | + handwriting fallback (Microsoft TrOCR via Transformers) |
+| `pip install 'ocrcontext[vision]'` | + handwriting primary (Google Cloud Vision) |
+| `pip install 'ocrcontext[all]'` | everything above |
+
+> **Images and scanned PDFs require `[paddle]`.**
+> The base install can only read digital PDFs (ones with a text layer). Passing an image to a
+> bare `pip install ocrcontext` will raise an `EngineError` with a clear install hint.
 
 Pick an LLM provider for refinement / extraction:
 
@@ -73,9 +79,25 @@ Pick an LLM provider for refinement / extraction:
 pip install langchain-openai        # or langchain-anthropic, langchain-ollama, ...
 ```
 
+No LLM provider is needed for raw OCR or digital PDF extraction.
+
 ## Usage
 
-### Raw OCR (no LLM, no API key)
+### Digital PDF — no extra install needed
+
+```python
+from ocrcontext import Analyzer
+
+# Works with just: pip install ocrcontext
+result = Analyzer().analyze("document.pdf")
+print(result.text, result.pages, result.text_source)  # text_source == "pdf_text"
+```
+
+### Images and scanned PDFs — requires `[paddle]`
+
+```bash
+pip install 'ocrcontext[paddle]'
+```
 
 ```python
 from ocrcontext import Analyzer
@@ -84,7 +106,11 @@ result = Analyzer().analyze("scan.png")
 print(result.text, result.confidence, result.pages, result.text_source)
 ```
 
-### LLM-refined OCR
+### LLM-refined OCR — requires `[paddle]` + a provider
+
+```bash
+pip install 'ocrcontext[paddle]' langchain-openai
+```
 
 Refinement fixes OCR errors **without** paraphrasing, translating, or inventing text. Emails, URLs
 and IBANs are masked before the model sees them and restored verbatim after; output that drifts too
@@ -125,6 +151,9 @@ print(result.raw_text)    # original OCR, kept alongside
 ```
 
 ### Structured extraction
+
+Digital PDF invoices work with just `pip install ocrcontext langchain-openai`.
+For image or scanned invoices add `[paddle]`.
 
 ```python
 from langchain_openai import ChatOpenAI
