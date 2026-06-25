@@ -82,6 +82,40 @@ pip install langchain-openai        # or langchain-anthropic, langchain-ollama, 
 
 No LLM provider is needed for raw OCR or digital PDF extraction.
 
+### Google Cloud Vision setup (for `[vision]`)
+
+Google Cloud Vision uses a service account instead of a simple API key.
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/) → create a project (or pick an existing one)
+2. Enable the **Cloud Vision API** for that project
+3. Go to **IAM & Admin → Service Accounts** → create a service account
+4. On the service account page, go to **Keys → Add Key → Create new key → JSON** — download the file
+5. Point the env var at it:
+
+```bash
+# Linux / macOS
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your-service-account.json"
+
+# Windows (PowerShell)
+$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\path\to\your-service-account.json"
+
+# Windows (CMD)
+set GOOGLE_APPLICATION_CREDENTIALS=C:\path\to\your-service-account.json
+```
+
+Then `[vision]` just works — no extra code needed:
+
+```python
+from ocrcontext import Analyzer
+
+analyzer = Analyzer()
+result = analyzer.analyze("handwritten_note.jpg", handwriting=True)
+print(result.text)
+```
+
+> For local development you can also use `gcloud auth application-default login` instead of a
+> service account file, if you have the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) installed.
+
 ## Usage
 
 ### Digital PDF — no extra install needed
