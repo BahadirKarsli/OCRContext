@@ -119,28 +119,35 @@ class PaddleEngine(OcrEngine):
 
     @staticmethod
     def _try_init(PaddleOCR, lang: str):
-        """Try several constructor signatures (PaddleOCR 3.x and legacy 2.x).
+        """Try several constructor signatures, newest model first.
 
-        Returns (engine_or_None, [error_strings]). The real exceptions are kept so
-        a total failure can be diagnosed instead of silently swallowed.
+        Order: PP-OCRv6 → PP-OCRv5 → PP-OCRv4 → 3.x default → legacy 2.x.
+        Returns (engine_or_None, [error_strings]). All exceptions are kept so a
+        total failure can be diagnosed rather than silently swallowed.
         """
-        # PaddleOCR 3.x: disable the doc-orientation / unwarping sub-models (unneeded
-        # for plain OCR) and oneDNN (CPU PIR incompatibility). Each kwarg is tried and
-        # gracefully dropped if a given build rejects it.
+        # Shared 3.x flags: disable sub-models unneeded for plain OCR and oneDNN
+        # (CPU PIR incompatibility on PaddlePaddle 3.x).
         base_3x = {
             "lang": lang,
             "use_doc_orientation_classify": False,
             "use_doc_unwarping": False,
             "use_textline_orientation": False,
+            "enable_mkldnn": False,
         }
         profiles = [
-            {**base_3x, "enable_mkldnn": False},
+            # PP-OCRv6: 50-language unified model, +5.1% rec over v5 (PaddleOCR 3.7+)
+            {**base_3x, "ocr_version": "PP-OCRv6"},
+            # PP-OCRv5: strong handwriting support (PaddleOCR 3.x)
+            {**base_3x, "ocr_version": "PP-OCRv5"},
+            # PP-OCRv4: stable 3.x baseline
+            {**base_3x, "ocr_version": "PP-OCRv4"},
+            # 3.x default — version determined by installed package, no pin
             base_3x,
+            # Minimal 3.x (for builds that reject the sub-model flags)
             {"lang": lang, "enable_mkldnn": False},
             {"lang": lang},
-            # Legacy 2.x signature (use_angle_cls / show_log removed in 3.x).
-            {"use_angle_cls": True, "use_textline_orientation": True, "lang": lang,
-             "show_log": False},
+            # Legacy 2.x (use_angle_cls; use_doc_* / show_log don't exist in 2.x)
+            {"use_angle_cls": True, "lang": lang},
         ]
         errors: list[str] = []
         for kwargs in profiles:
