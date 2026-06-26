@@ -14,6 +14,16 @@ Decoupled, LLM-agnostic document OCR + structured extraction. No web server, no 
 
 </div>
 
+**Try it in 30 seconds — no Python script needed:**
+
+```bash
+pip install 'ocrcontext[paddle,cli]'
+ocrcontext extract invoice.pdf
+ocrcontext extract receipt.jpg --schema receipt --output json
+```
+
+**Or use the Python API:**
+
 ```python
 from ocrcontext import Analyzer
 
@@ -28,8 +38,8 @@ print(result.text)
 ## Contents
 
 - [Install](#install)
-- [Quick start](#quick-start)
 - [CLI](#cli)
+- [Quick start (Python API)](#quick-start-python-api)
 - [LangChain integration](#langchain-integration)
 - [Built-in schemas](#built-in-schemas)
 - [How it routes a document](#how-it-routes-a-document)
@@ -73,7 +83,61 @@ $env:GOOGLE_APPLICATION_CREDENTIALS = "C:\path\to\key.json" # PowerShell
 
 ---
 
-## Quick start
+## CLI
+
+Install the `[cli]` extra to use `ocrcontext` straight from the terminal — no Python script needed.
+
+```bash
+pip install 'ocrcontext[paddle,cli]'
+```
+
+**Extract plain text:**
+
+```bash
+ocrcontext extract invoice.pdf
+ocrcontext extract scan.png --output json
+```
+
+**Extract structured data with a built-in schema:**
+
+```bash
+ocrcontext extract invoice.pdf    --schema invoice
+ocrcontext extract receipt.jpg    --schema receipt
+ocrcontext extract contract.pdf   --schema contract
+ocrcontext extract passport.jpg   --schema idcard
+ocrcontext extract lab_report.pdf --schema medical
+```
+
+**Choose your LLM provider:**
+
+```bash
+ocrcontext extract invoice.pdf --schema invoice \
+  --provider openai --model gpt-4o-mini
+
+ocrcontext extract invoice.pdf --schema invoice \
+  --provider anthropic --model claude-haiku-4-5-20251001
+
+ocrcontext extract invoice.pdf --schema invoice \
+  --provider ollama --model llama3.1
+```
+
+**All options:**
+
+```
+ocrcontext extract FILE [OPTIONS]
+
+  --schema    -s   invoice | receipt | contract | idcard | medical
+  --lang      -l   Language code (default: en)
+  --handwriting    Force handwriting engine
+  --refine         auto (default) | yes | no
+  --output    -o   text (default) | json
+  --provider  -p   openai | anthropic | ollama | google
+  --model     -m   Model name (default: gpt-4o-mini)
+```
+
+---
+
+## Quick start (Python API)
 
 ### Digital PDF
 
@@ -161,60 +225,6 @@ from ocrcontext import Analyzer
 analyzer = Analyzer(llm=ChatOllama(model="llama3.1"))
 result = analyzer.analyze("scan.png")
 print(result.text)
-```
-
----
-
-## CLI
-
-Install the `[cli]` extra to use `ocrcontext` straight from the terminal — no Python script needed.
-
-```bash
-pip install 'ocrcontext[cli]'
-```
-
-**Extract plain text:**
-
-```bash
-ocrcontext extract invoice.pdf
-ocrcontext extract scan.png --output json
-```
-
-**Extract structured data with a built-in schema:**
-
-```bash
-ocrcontext extract invoice.pdf   --schema invoice
-ocrcontext extract receipt.jpg   --schema receipt
-ocrcontext extract contract.pdf  --schema contract
-ocrcontext extract passport.jpg  --schema idcard
-ocrcontext extract lab_report.pdf --schema medical
-```
-
-**Choose your LLM provider:**
-
-```bash
-ocrcontext extract invoice.pdf --schema invoice \
-  --provider openai --model gpt-4o-mini
-
-ocrcontext extract invoice.pdf --schema invoice \
-  --provider anthropic --model claude-haiku-4-5-20251001
-
-ocrcontext extract invoice.pdf --schema invoice \
-  --provider ollama --model llama3.1
-```
-
-**All options:**
-
-```
-ocrcontext extract FILE [OPTIONS]
-
-  --schema    -s   invoice | receipt | contract | idcard | medical
-  --lang      -l   Language code (default: en)
-  --handwriting    Force handwriting engine
-  --refine         auto (default) | yes | no
-  --output    -o   text (default) | json
-  --provider  -p   openai | anthropic | ollama | google
-  --model     -m   Model name (default: gpt-4o-mini)
 ```
 
 ---
@@ -348,6 +358,7 @@ report = analyzer.extract("lab_report.pdf", schema=MedicalReport)
       │                                       │
       │ 3. Handwriting (explicit or auto)?    │
       │    └─▶ Google Cloud Vision            │
+      │        → PaddleOCR if Vision empty    │
       │                                       │
       │ 4. (optional) LLM refine              │
       │    fidelity-first · literal-safe      │
