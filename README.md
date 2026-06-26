@@ -19,7 +19,7 @@ Decoupled, LLM-agnostic document OCR + structured extraction. No web server, no 
 ```bash
 pip install 'ocrcontext[paddle,cli]'
 ocrcontext extract invoice.pdf
-ocrcontext extract receipt.jpg --schema receipt --output json
+ocrcontext extract receipt.jpg --output json
 ```
 
 **Or use the Python API:**
