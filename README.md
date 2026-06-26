@@ -48,8 +48,7 @@ Engines are opt-in so your base install stays small:
 |---|---|
 | `pip install ocrcontext` | Digital PDFs only (PyMuPDF text-layer — no OCR, no GPU, no API key) |
 | `pip install 'ocrcontext[paddle]'` | + printed images & scanned PDFs (PaddleOCR, CPU/GPU) |
-| `pip install 'ocrcontext[trocr]'` | + handwriting fallback (Microsoft TrOCR) |
-| `pip install 'ocrcontext[vision]'` | + handwriting primary (Google Cloud Vision) |
+| `pip install 'ocrcontext[vision]'` | + handwriting (Google Cloud Vision) |
 | `pip install 'ocrcontext[cli]'` | + terminal CLI (`ocrcontext extract`) |
 | `pip install 'ocrcontext[all]'` | everything above |
 
@@ -349,7 +348,6 @@ report = analyzer.extract("lab_report.pdf", schema=MedicalReport)
       │                                       │
       │ 3. Handwriting (explicit or auto)?    │
       │    └─▶ Google Cloud Vision            │
-      │        → TrOCR fallback               │
       │                                       │
       │ 4. (optional) LLM refine              │
       │    fidelity-first · literal-safe      │
@@ -360,7 +358,7 @@ report = analyzer.extract("lab_report.pdf", schema=MedicalReport)
 ```
 
 Multi-page documents are joined with `--- Page N ---` separators.
-Handwriting kicks in automatically when printed OCR returns too little text.
+Handwriting step 3 is explicit-only by default; set `auto_handwriting_fallback=True` to enable automatic retry.
 
 ---
 
@@ -393,7 +391,7 @@ from ocrcontext import Analyzer, AnalyzerConfig
 cfg = AnalyzerConfig(
     lang="tr",                        # default document language
     prefer_pdf_text_layer=True,       # skip OCR when a text layer exists
-    auto_handwriting_fallback=True,   # retry with handwriting if OCR returns too little
+    auto_handwriting_fallback=False,  # keep PaddleOCR as sole engine (default); set True to enable Vision fallback
     refine_by_default=True,           # auto-refine whenever an LLM is configured
 )
 analyzer = Analyzer(llm=..., config=cfg)

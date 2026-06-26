@@ -27,7 +27,7 @@ if TYPE_CHECKING:
 
 TSchema = TypeVar("TSchema", bound=BaseModel)
 
-_HANDWRITING_SOURCES = {"vision_handwriting", "trocr_handwriting", "handwriting_ocr"}
+_HANDWRITING_SOURCES = {"vision_handwriting", "handwriting_ocr"}
 
 
 class Analyzer:

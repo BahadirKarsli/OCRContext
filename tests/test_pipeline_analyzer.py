@@ -60,12 +60,21 @@ def test_auto_handwriting_fallback_triggers_on_insufficient_text():
     reg._paddle = FakeEngine(["ab"])  # too little text -> insufficient
     reg._handwriting = FakeEngine(
         ["recovered handwritten sentence with plenty of words here"],
-        text_source="trocr_handwriting",
+        text_source="vision_handwriting",
     )
-    analyzer = Analyzer(registry=reg)  # fallback enabled (default)
+    analyzer = Analyzer(registry=reg, config=AnalyzerConfig(auto_handwriting_fallback=True))
     result = analyzer.analyze(PNG_BYTES, filename="page.png")
-    assert result.text_source == "trocr_handwriting"
+    assert result.text_source == "vision_handwriting"
     assert "recovered handwritten sentence" in result.text
+
+
+def test_vision_to_paddle_fallback_when_vision_returns_nothing():
+    reg = EngineRegistry()
+    reg._paddle = FakeEngine(["paddle recovered this text successfully"])
+    reg._handwriting = FakeEngine(["ab"], text_source="vision_handwriting")  # insufficient
+    result = Analyzer(registry=reg).analyze(PNG_BYTES, filename="page.png", handwriting=True)
+    assert result.text_source == "ocr"
+    assert "paddle recovered" in result.text
 
 
 def test_registry_singleton_shared():
@@ -85,11 +94,11 @@ def test_config_lang_threads_through():
 def test_infer_mode_for_handwriting(monkeypatch):
     reg = EngineRegistry()
     reg._handwriting = FakeEngine(
-        ["W Wisdom\nK Knowledge\nI Information\nD Data"],
+        ["W Wisdom: applying knowledge\nK Knowledge: understanding context\nI Information: processed data\nD Data: raw facts"],
         has_dikw=True,
         text_source="vision_handwriting",
     )
-    llm = FakeChatModel(text="W Wisdom\nK Knowledge\nI Information\nD Data")
+    llm = FakeChatModel(text="W Wisdom: applying knowledge\nK Knowledge: understanding context\nI Information: processed data\nD Data: raw facts")
     analyzer = Analyzer(llm=llm, registry=reg)
     result = analyzer.analyze(PNG_BYTES, filename="note.png", handwriting=True)
     assert result.text_source == "vision_handwriting"

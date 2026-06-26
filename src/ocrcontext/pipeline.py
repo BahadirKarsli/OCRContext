@@ -66,6 +66,10 @@ class Pipeline:
         ):
             result = self._ocr(file_bytes, ext, lang=lang, handwriting=True)
 
+        # 4) Vision→Paddle fallback: if Vision returned nothing, retry with PaddleOCR.
+        if handwriting and is_ocr_text_insufficient(result.text, result.pages):
+            result = self._ocr(file_bytes, ext, lang=lang, handwriting=False)
+
         return result
 
     def _ocr(
@@ -123,7 +127,6 @@ class Pipeline:
         full_text = ""
         all_scores: list[float] = []
         used_vision = False
-        used_trocr = False
         has_dikw = False
 
         for idx, img_path in enumerate(image_paths):
@@ -139,19 +142,12 @@ class Pipeline:
                 has_dikw = True
             if page.text_source == "vision_handwriting":
                 used_vision = True
-            elif page.text_source == "trocr_handwriting":
-                used_trocr = True
 
         avg_conf = sum(all_scores) / len(all_scores) if all_scores else 0.0
 
         text_source: TextSource = engine.text_source  # type: ignore[assignment]
         if handwriting:
-            if used_vision and not used_trocr:
-                text_source = "vision_handwriting"
-            elif used_trocr:
-                text_source = "trocr_handwriting"
-            else:
-                text_source = "handwriting_ocr"
+            text_source = "vision_handwriting" if used_vision else "handwriting_ocr"
 
         return OcrResult(
             text=full_text.strip(),

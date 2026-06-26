@@ -41,7 +41,9 @@ class AnalyzerConfig:
 
     # When True, automatically retry with the handwriting engine if printed OCR
     # returns insufficient text (mirrors the documents/process retry ladder).
-    auto_handwriting_fallback: bool = True
+    # Disabled by default: PaddleOCR is the sole default OCR engine; enable
+    # explicitly when [vision] is installed.
+    auto_handwriting_fallback: bool = False
 
     # Default refinement behaviour when Analyzer.analyze(refine=None):
     #   - refine when an LLM is configured AND the text did not come from an exact

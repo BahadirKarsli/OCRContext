@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-06-26
+
+### Changed
+- **Removed TrOCR engine** — Microsoft TrOCR (`[trocr]` extra) is removed from the
+  project. PaddleOCR outperforms TrOCR on printed text; Google Vision outperforms it
+  on handwriting. The `[trocr]` extra and its heavy deps (torch, transformers, etc.)
+  are gone. The extras table is now `[paddle]`, `[vision]`, `[cli]`, `[all]`.
+- **`auto_handwriting_fallback` default changed to `False`** — PaddleOCR is now the
+  sole default engine. Set `AnalyzerConfig(auto_handwriting_fallback=True)` to enable
+  automatic Vision retry on insufficient printed OCR output.
+
+### Added
+- **Vision→Paddle fallback** — when `handwriting=True` and Google Vision returns
+  insufficient text (e.g. no credentials, unsupported language), PaddleOCR is tried
+  automatically. Users no longer need TrOCR for a handwriting safety net.
+
 ## [0.1.2] - 2026-06-26
 
 ### Fixed
@@ -73,7 +89,8 @@ into a standalone, LLM-agnostic library.
 - **Packaging** — optional extras `[paddle]`, `[trocr]`, `[vision]`, `[all]`;
   PEP 561 typed (`py.typed`); examples and a GPU/network-free test suite.
 
-[Unreleased]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.3...HEAD
+[0.1.3]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/bahadirkarsli/ocrcontext/releases/tag/v0.1.0

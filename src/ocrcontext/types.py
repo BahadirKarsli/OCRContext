@@ -29,7 +29,6 @@ TextSource = Literal[
     "pdf_text_layer",
     "ocr",
     "vision_handwriting",
-    "trocr_handwriting",
     "handwriting_ocr",
 ]
 
