@@ -4,13 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import pytest
 from typer.testing import CliRunner
 
 from ocrcontext.cli import app, _parse_refine, _SCHEMAS
-from ocrcontext import AnalyzerConfig, EngineRegistry
 
-from .conftest import FakeChatModel, FakeEngine
 
 PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
 

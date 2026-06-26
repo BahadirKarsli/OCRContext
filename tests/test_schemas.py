@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
 
 from ocrcontext import Analyzer, AnalyzerConfig, EngineRegistry
 from ocrcontext.schemas import (
@@ -12,13 +11,9 @@ from ocrcontext.schemas import (
     MEDICAL_REPORT_EXTRACTION_PROMPT,
     RECEIPT_EXTRACTION_PROMPT,
     Contract,
-    ContractParty,
     IdCard,
-    Invoice,
     MedicalReport,
-    Medication,
     Receipt,
-    ReceiptItem,
 )
 
 from .conftest import FakeChatModel, FakeEngine
