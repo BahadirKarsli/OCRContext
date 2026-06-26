@@ -29,8 +29,9 @@ class EngineRegistry:
     _shared: "EngineRegistry | None" = None
     _shared_lock = threading.Lock()
 
-    def __init__(self) -> None:
+    def __init__(self, *, use_gpu: bool = False) -> None:
         self._lock = threading.Lock()
+        self._use_gpu = use_gpu
         self._paddle: "PaddleEngine | None" = None
         self._handwriting: "HandwritingEngine | None" = None
 
@@ -48,7 +49,7 @@ class EngineRegistry:
                 if self._paddle is None:
                     from .paddle import PaddleEngine
 
-                    self._paddle = PaddleEngine()
+                    self._paddle = PaddleEngine(use_gpu=self._use_gpu)
         return self._paddle
 
     def handwriting(self) -> "HandwritingEngine":

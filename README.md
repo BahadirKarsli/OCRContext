@@ -40,6 +40,7 @@ print(result.text)
 - [Install](#install)
 - [CLI](#cli)
 - [Quick start (Python API)](#quick-start-python-api)
+  - [GPU acceleration](#gpu-acceleration)
 - [LangChain integration](#langchain-integration)
 - [Built-in schemas](#built-in-schemas)
 - [How it routes a document](#how-it-routes-a-document)
@@ -162,6 +163,26 @@ from ocrcontext import Analyzer
 result = Analyzer().analyze("scan.png")
 print(result.text, result.confidence)
 ```
+
+### GPU acceleration
+
+If you have a CUDA-capable GPU, swap the CPU PaddlePaddle build for the GPU one and pass `use_gpu=True`:
+
+```bash
+pip install 'ocrcontext[paddle]'
+pip install paddlepaddle-gpu   # replaces the CPU build; pick the wheel that matches your CUDA version
+```
+
+```python
+from ocrcontext import Analyzer
+
+analyzer = Analyzer(use_gpu=True)
+result = analyzer.analyze("scan.png")
+print(result.text, result.confidence)
+```
+
+> PaddleOCR is typically 5–10× faster on GPU for large documents or batch workloads.
+> CPU (`use_gpu=False`, the default) works out of the box with no extra steps.
 
 ### LLM-refined OCR
 
@@ -405,7 +426,7 @@ cfg = AnalyzerConfig(
     auto_handwriting_fallback=False,  # keep PaddleOCR as sole engine (default); set True to enable Vision fallback
     refine_by_default=True,           # auto-refine whenever an LLM is configured
 )
-analyzer = Analyzer(llm=..., config=cfg)
+analyzer = Analyzer(llm=..., config=cfg, use_gpu=False)  # set use_gpu=True for CUDA-capable devices
 ```
 
 ---

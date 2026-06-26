@@ -40,11 +40,16 @@ class Analyzer:
         Bring your own provider (``langchain_openai.ChatOpenAI`` etc.).
     lang:
         Default document language code (e.g. ``"en"``, ``"tr"``).
+    use_gpu:
+        Run PaddleOCR on GPU (requires a CUDA-capable device and the GPU build
+        of PaddlePaddle). Defaults to ``False`` (CPU).
     config:
         Advanced pipeline tuning. Overrides ``lang`` if both are set.
     registry:
         Shared engine registry (singleton model cache). Defaults to a process-wide
-        shared instance so PaddleOCR/TrOCR load at most once.
+        shared instance so PaddleOCR/TrOCR load at most once. When ``use_gpu=True``
+        and no explicit registry is provided, a dedicated registry is created so the
+        GPU engine does not interfere with the default CPU singleton.
     """
 
     def __init__(
@@ -52,12 +57,18 @@ class Analyzer:
         llm: "Optional[BaseChatModel]" = None,
         *,
         lang: str = "en",
+        use_gpu: bool = False,
         config: Optional[AnalyzerConfig] = None,
         registry: Optional[EngineRegistry] = None,
     ) -> None:
         self._llm = llm
         self.config = config or AnalyzerConfig(lang=lang)
-        self.registry = registry or EngineRegistry.shared()
+        if registry is not None:
+            self.registry = registry
+        elif use_gpu:
+            self.registry = EngineRegistry(use_gpu=True)
+        else:
+            self.registry = EngineRegistry.shared()
         self._pipeline = Pipeline(registry=self.registry, config=self.config)
         self._refiner: "Refiner | None" = None
         self._extractor: "StructuredExtractor | None" = None
