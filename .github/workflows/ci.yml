@@ -32,4 +32,4 @@ jobs:
         run: ruff check .
 
       - name: Test
-        run: pytest --tb=short
+        run: pytest --tb=long -v

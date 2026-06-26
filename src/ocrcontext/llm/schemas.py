@@ -8,7 +8,7 @@ their own Pydantic schemas.
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel, Field, model_validator
 
@@ -115,7 +115,7 @@ class Receipt(BaseModel):
     store_name: Optional[str] = Field(None, description="Name of the store or merchant.")
     date: Optional[str] = Field(None, description="Transaction date, format YYYY-MM-DD.")
     time: Optional[str] = Field(None, description="Transaction time, format HH:MM.")
-    items: List[ReceiptItem] = Field(default_factory=list, description="Purchased items.")
+    items: list[ReceiptItem] = Field(default_factory=list, description="Purchased items.")
     subtotal: Optional[float] = Field(None, description="Amount before tax.")
     tax_amount: Optional[float] = Field(None, description="Tax amount charged.")
     total_amount: Optional[float] = Field(None, description="Final total paid.")
@@ -154,7 +154,7 @@ class ContractParty(BaseModel):
 
 class Contract(BaseModel):
     title: Optional[str] = Field(None, description="Official title or subject of the contract.")
-    parties: List[ContractParty] = Field(
+    parties: list[ContractParty] = Field(
         default_factory=list, description="All parties involved."
     )
     effective_date: Optional[str] = Field(
@@ -266,10 +266,10 @@ class MedicalReport(BaseModel):
     diagnosis: Optional[str] = Field(
         None, description="Primary diagnosis or clinical finding."
     )
-    icd_codes: List[str] = Field(
+    icd_codes: list[str] = Field(
         default_factory=list, description="ICD-10 or ICD-11 codes if present."
     )
-    medications: List[Medication] = Field(
+    medications: list[Medication] = Field(
         default_factory=list, description="Prescribed medications."
     )
     notes: Optional[str] = Field(
