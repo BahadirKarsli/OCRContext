@@ -11,6 +11,7 @@ Then run:
 
 from __future__ import annotations
 
+import os
 import sys
 from pathlib import Path
 from typing import Optional
@@ -25,6 +26,7 @@ except ImportError:  # pragma: no cover
 
 from .analyzer import Analyzer
 from .config import AnalyzerConfig
+from .types import OcrResult
 from .schemas import (
     Contract,
     IdCard,
@@ -32,6 +34,61 @@ from .schemas import (
     MedicalReport,
     Receipt,
 )
+
+def _suppress_paddle_noise() -> None:
+    import logging
+    import warnings
+
+    # Set env vars BEFORE any paddle/paddlex import so they see the right paths.
+    # _ensure_ascii_model_cache() in paddle.py does the same but only when the
+    # engine lazy-loads; calling it here guarantees it runs first.
+    from .engines.paddle import _ensure_ascii_model_cache, _ensure_paddle_runtime_flags
+    _ensure_ascii_model_cache()
+    _ensure_paddle_runtime_flags()
+
+    os.environ.setdefault("GLOG_minloglevel", "3")
+
+    # Silence Python-level loggers (no paddlex import — that would defeat the purpose).
+    null = logging.NullHandler()
+    for name in ("ppocr", "paddlex", "paddle", "paddle.utils", "paddle.fluid"):
+        lg = logging.getLogger(name)
+        lg.setLevel(logging.ERROR)
+        lg.handlers = [null]
+        lg.propagate = False
+
+    # Root-level filter catches sub-loggers that bypass the above (e.g. paddlex.utils.*).
+    class _NoiseFilter(logging.Filter):
+        _NOISE = ("Could not find files", "ccache", "oneDNN", "mkldnn")
+        def filter(self, record: logging.LogRecord) -> bool:
+            return not any(t in record.getMessage() for t in self._NOISE)
+
+    logging.getLogger().addFilter(_NoiseFilter())
+
+    warnings.filterwarnings("ignore", category=UserWarning, module="paddle")
+
+
+
+
+def _route_label(result: OcrResult, file_path: Path) -> str:
+    src = result.text_source
+    if src == "pdf_text_layer":
+        return "DIGITAL PDF -> text layer"
+    if src == "ocr":
+        return "SCANNED PDF -> rasterize + PaddleOCR" if file_path.suffix.lower() == ".pdf" else "IMAGE -> PaddleOCR"
+    if src == "vision_handwriting":
+        return "HANDWRITING -> Google Vision"
+    if src == "handwriting_ocr":
+        return "HANDWRITING -> PaddleOCR"
+    return src
+
+
+def _info(msg: str) -> None:
+    typer.echo(f"[i] {msg}", err=True)
+
+
+def _ok(msg: str) -> None:
+    typer.echo(f"[OK] {msg}", err=True)
+
 
 app = typer.Typer(
     name="ocrcontext",
@@ -129,12 +186,13 @@ def extract(
 ) -> None:
     """OCR a document and optionally extract structured data."""
 
+    _suppress_paddle_noise()
+
     file_path = Path(file)
     if not file_path.exists():
         typer.echo(f"[ERROR] File not found: {file}", err=True)
         raise typer.Exit(code=1)
 
-    # Validate --schema value early for a clear error message.
     if schema is not None and schema not in _SCHEMAS:
         typer.echo(
             f"[ERROR] Unknown schema '{schema}'. "
@@ -148,36 +206,42 @@ def extract(
         raise typer.Exit(code=1)
 
     refine_flag = _parse_refine(refine)
-
-    # Build LLM only when needed.
     needs_llm = schema is not None or refine_flag is True
     llm = _build_llm(provider, model) if needs_llm else None
 
-    analyzer = Analyzer(
-        llm=llm,
-        config=AnalyzerConfig(lang=lang),
-    )
+    analyzer = Analyzer(llm=llm, config=AnalyzerConfig(lang=lang))
 
     try:
-        if schema is not None:
-            schema_cls = _SCHEMAS[schema]
-            result = analyzer.extract(
-                file_path,
-                schema=schema_cls,
-                handwriting=handwriting,
-                refine=refine_flag or False,
-            )
-            typer.echo(result.model_dump_json(indent=2))
-        else:
-            result = analyzer.analyze(
+        _info(f"file: {file_path.name}")
+        _info("OCR...")
+
+        ocr_result = analyzer.analyze(
                 file_path,
                 handwriting=handwriting,
                 refine=refine_flag,
             )
+
+        conf = f"confidence: {ocr_result.confidence:.0%}" if ocr_result.confidence < 1.0 else "exact"
+        _ok(f"route: {_route_label(ocr_result, file_path)}  ({conf})")
+
+        if ocr_result.refined:
+            _ok("refine: APPLIED")
+
+        if schema is not None:
+            schema_cls = _SCHEMAS[schema]
+            _info(f"extract: {schema} schema...")
+            structured = analyzer.extract_text(
+                ocr_result.text,
+                schema_cls,
+                language=lang,
+            )
+            _ok(f"extract: {schema} [OK]")
+            typer.echo(structured.model_dump_json(indent=2))
+        else:
             if output == "json":
-                typer.echo(result.model_dump_json(indent=2))
+                typer.echo(ocr_result.model_dump_json(indent=2))
             else:
-                typer.echo(result.text)
+                typer.echo(ocr_result.text)
 
     except Exception as exc:  # noqa: BLE001
         typer.echo(f"[ERROR] {exc}", err=True)

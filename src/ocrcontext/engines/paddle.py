@@ -104,6 +104,7 @@ class PaddleEngine(OcrEngine):
         import logging
 
         logging.getLogger("ppocr").setLevel(logging.ERROR)
+        logging.getLogger("paddlex").setLevel(logging.ERROR)
         requested = paddle_lang
         ocr, errors = self._try_init(PaddleOCR, paddle_lang, use_gpu=self._use_gpu)
         if ocr is None and paddle_lang != "en":
@@ -129,9 +130,12 @@ class PaddleEngine(OcrEngine):
         # Shared 3.x flags: disable sub-models unneeded for plain OCR.
         # enable_mkldnn is forced False on CPU to avoid PaddlePaddle 3.x PIR bug;
         # on GPU it's irrelevant (MKLDNN is CPU-only) but harmless to keep False.
+        # use_gpu is only injected when True — some PaddleOCR 3.x builds reject it
+        # as an unknown argument even when set to False.
+        gpu_kwargs = {"use_gpu": True} if use_gpu else {}
         base_3x = {
             "lang": lang,
-            "use_gpu": use_gpu,
+            **gpu_kwargs,
             "use_doc_orientation_classify": False,
             "use_doc_unwarping": False,
             "use_textline_orientation": False,
@@ -147,10 +151,10 @@ class PaddleEngine(OcrEngine):
             # 3.x default — version determined by installed package, no pin
             base_3x,
             # Minimal 3.x (for builds that reject the sub-model flags)
-            {"lang": lang, "use_gpu": use_gpu, "enable_mkldnn": False},
-            {"lang": lang, "use_gpu": use_gpu},
+            {"lang": lang, **gpu_kwargs, "enable_mkldnn": False},
+            {"lang": lang, **gpu_kwargs},
             # Legacy 2.x (use_angle_cls; use_doc_* / show_log don't exist in 2.x)
-            {"use_angle_cls": True, "lang": lang, "use_gpu": use_gpu},
+            {"use_angle_cls": True, "lang": lang, **gpu_kwargs},
         ]
         errors: list[str] = []
         for kwargs in profiles:

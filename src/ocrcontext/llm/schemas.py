@@ -22,7 +22,7 @@ class LineItem(BaseModel):
             "Default 1 only if neither is available."
         ),
     )
-    unit: Optional[str] = Field(None, description="Unit type (Adet, Kg, Saat, etc.).")
+    unit: Optional[str] = Field(None, description="Unit of measure as written on the document (e.g. pcs, kg, hrs). Null if not present.")
     unit_price: Optional[float] = Field(None, description="Price per unit.")
     tax_rate: Optional[str] = Field(
         None, description="Tax percentage (e.g., 20, 10, 0) or pattern."
@@ -34,9 +34,9 @@ class Invoice(BaseModel):
     supplier_name: Optional[str] = Field(None, description="Name of the vendor/supplier.")
     invoice_date: Optional[str] = Field(None, description="Format YYYY-MM-DD.")
     invoice_number: Optional[str] = Field(None, description="The invoice ID/number.")
-    tax_id: Optional[str] = Field(None, description="Tax ID / VKN / TCKN.")
+    tax_id: Optional[str] = Field(None, description="Tax ID / VAT registration number.")
     tax_rate: Optional[str] = Field(
-        None, description="e.g. 'KDV %20' when KDV is 20%."
+        None, description="Tax/VAT rate as written on the document (e.g. 'VAT 20%', 'GST 10%')."
     )
     currency: Optional[str] = Field(None, description="Currency code (TRY, USD, EUR, etc.).")
     total_amount: Optional[float] = Field(None, description="Final total amount (numeric).")
@@ -63,37 +63,38 @@ class Invoice(BaseModel):
         return self
 
 
-# Verbatim system prompt from app/api/invoices/process/route.ts.
 INVOICE_EXTRACTION_PROMPT = """You are an expert invoice data extraction assistant.
 
 CRITICAL RULES:
-1. **LANGUAGE REPAIR**:
-    - The text may come from OCR and may have missing characters.
-    - If language is 'tr' (Turkish), intelligently fix missing Turkish characters.
+1. **OCR REPAIR**: The text may come from OCR and may have missing or garbled characters.
+   Use context to infer the correct value — do not invent values that are not on the document.
 
 2. **NUMBER PARSING**:
-    - Be extremely careful with comma (,) and dot (.).
-    - In Turkish/European invoices, '1.200,50' means One Thousand Two Hundred and 50 cents.
-    - NEVER confuse a quantity (e.g., 500) with a price (e.g. 5,00).
+    - Be careful with comma (,) and dot (.) as thousand separators vs decimal points.
+    - European format: '1.200,50' = 1200.50. US/UK format: '1,200.50' = 1200.50.
+    - NEVER confuse a quantity (e.g., 2) with a unit price (e.g., 45.00).
 
 3. **CURRENCY DETECTION**:
-    - Look for symbols: ₺, TL, TRY, USD, $, EUR, €.
-    - Prioritize 'TRY' / 'TL' unless explicitly stated otherwise.
+    - Look for symbols or codes on the document: $, USD, €, EUR, £, GBP, ₺, TRY, etc.
+    - Use ONLY what is explicitly stated. Do not default to any currency.
 
-Extract the following fields if it exists:
+4. **UNITS**: Copy the unit exactly as written on the document (pcs, kg, hrs, m², etc.).
+   If no unit is shown, use null — never invent one.
+
+Extract the following fields if present:
 - 'supplier_name': Name of the vendor/supplier.
 - 'invoice_date': Format YYYY-MM-DD.
 - 'invoice_number': The invoice ID/number.
-- 'tax_id': Tax ID / VKN / TCKN.
-- 'tax_rate': It can be like 'KDV' and for example if it is 'KDV' and it is %20, write it as 'KDV %20' in excel.
-- 'currency': Currency code (TRY, USD, EUR, etc.).
+- 'tax_id': Tax ID or VAT registration number.
+- 'tax_rate': Tax/VAT rate as written (e.g. 'VAT 20%', 'GST 10%').
+- 'currency': ISO currency code (USD, EUR, GBP, TRY, etc.).
 - 'total_amount': Final total amount (numeric).
 - 'line_items': An array of items/services. Each item should have:
   - 'description': Product/Service name.
   - 'quantity': Numeric quantity. If missing, calculate it as total / unit_price. Default 1 only if neither is available.
-  - 'unit': Unit type (Adet, Kg, Saat, etc.).
+  - 'unit': Unit of measure exactly as written on the document. Null if not present.
   - 'unit_price': Price per unit.
-  - 'tax_rate': Tax percentage (e.g., 20, 10, 0) or pattern.
+  - 'tax_rate': Tax percentage (e.g., 20, 10, 0) or null.
   - 'total': Total price for this line.
 
 Return ONLY a valid JSON object. If a field is not found, use null."""

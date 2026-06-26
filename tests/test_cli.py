@@ -48,6 +48,9 @@ def _patch_analyzer(monkeypatch, ocr_text: str = "hello world", structured: dict
         def extract(self, *args, schema=None, **kwargs):
             return schema(**(structured or {}))
 
+        def extract_text(self, text, schema, **kwargs):
+            return schema(**(structured or {}))
+
     monkeypatch.setattr(cli_mod, "Analyzer", _FakeAnalyzer)
     monkeypatch.setattr(cli_mod, "_build_llm", lambda provider, model: None)
 
@@ -99,7 +102,7 @@ def test_extract_json_output(ascii_tmp, monkeypatch):
     result = runner.invoke(app, ["extract", str(png), "--output", "json"])
     assert result.exit_code == 0
     import json
-    data = json.loads(result.output)
+    data = json.loads(result.output[result.output.index("{"):])
     assert data["text"] == "some text"
     assert data["text_source"] == "ocr"
 
@@ -119,7 +122,7 @@ def test_extract_invoice_schema(ascii_tmp, monkeypatch):
     result = runner.invoke(app, ["extract", str(png), "--schema", "invoice"])
     assert result.exit_code == 0
     import json
-    data = json.loads(result.output)
+    data = json.loads(result.output[result.output.index("{"):])
     assert data["supplier_name"] == "ACME"
     assert data["total_amount"] == 250.0
 
@@ -131,7 +134,7 @@ def test_extract_receipt_schema(ascii_tmp, monkeypatch):
     result = runner.invoke(app, ["extract", str(png), "--schema", "receipt"])
     assert result.exit_code == 0
     import json
-    data = json.loads(result.output)
+    data = json.loads(result.output[result.output.index("{"):])
     assert data["store_name"] == "Migros"
 
 
