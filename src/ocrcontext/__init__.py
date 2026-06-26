@@ -32,7 +32,7 @@ from .exceptions import (
 )
 from .types import OcrResult, RefinementMode
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 __all__ = [
     "Analyzer",

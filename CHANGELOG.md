@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-06-26
+
+### Fixed
+- CI: disable Rich markup mode in typer (`rich_markup_mode=None`) so help output
+  is plain text on all platforms — Rich's panel renderer produced ANSI escape
+  codes that CliRunner could not strip on Linux, causing `--help` tests to fail.
+- Replace `typing.List` with built-in `list` in schemas for Python 3.12
+  compatibility and to avoid deprecation warnings.
+
 ## [0.1.1] - 2026-06-26
 
 ### Added
@@ -64,6 +73,7 @@ into a standalone, LLM-agnostic library.
 - **Packaging** — optional extras `[paddle]`, `[trocr]`, `[vision]`, `[all]`;
   PEP 561 typed (`py.typed`); examples and a GPU/network-free test suite.
 
-[Unreleased]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.2...HEAD
+[0.1.2]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/bahadirkarsli/ocrcontext/releases/tag/v0.1.0

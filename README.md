@@ -23,112 +23,71 @@ print(result.text)
 
 ---
 
-`ocrcontext` is the extraction core of a production document-analysis platform, lifted out of its
-FastAPI/Next.js stack into a pure, pip-installable library. It does the hard parts — OCR engine
-routing, fidelity-first LLM cleanup, and schema-based extraction — and gets out of your way.
-
-## Why OCR Context
-
-- **🚀 3-line DX** — instantiate, pass a file, get a result. That's the whole API surface.
-  
-- **🔌 LLM-agnostic** — inject *any* LangChain chat model (OpenAI, Anthropic, Ollama, local). Only
-  `langchain-core` is required; you bring the provider.
-
-- **🧠 Fidelity-first refinement** — fixes OCR errors without paraphrasing, translating, or inventing.
-  Emails/URLs/IBANs are frozen so the model can't "correct" them, and drifting output is rejected.
-  
-- **📐 Structured extraction** — hand it a Pydantic schema, get a populated instance back via
-  `with_structured_output`.
-  
-- **⚡ Resource-efficient** — heavy models (PaddleOCR, TrOCR) load lazily and are cached as
-  process-wide singletons. They never reload per call.
-  
-- **🪶 Lightweight base install** — engines are opt-in extras. Core stays tiny.
-  
-- **🪟 Windows-hardened** — survives non-ASCII usernames and the PaddlePaddle 3.x CPU oneDNN issue
-  out of the box.
+`ocrcontext` is the extraction core of a production document-analysis platform, lifted out of its FastAPI/Next.js stack into a pure, pip-installable library. It handles OCR engine routing, fidelity-first LLM cleanup, and schema-based structured extraction — and gets out of your way.
 
 ## Contents
 
 - [Install](#install)
-- [Usage](#usage)
+- [Quick start](#quick-start)
+- [CLI](#cli)
+- [LangChain integration](#langchain-integration)
+- [Built-in schemas](#built-in-schemas)
 - [How it routes a document](#how-it-routes-a-document)
 - [Refinement modes](#refinement-modes)
 - [Configuration](#configuration)
 - [Development](#development)
 - [License](#license)
 
+---
+
 ## Install
 
-Engines are opt-in so your base install stays small. Pick what you need:
+Engines are opt-in so your base install stays small:
 
-| Install command | What you get |
+| Command | What you get |
 |---|---|
-| `pip install ocrcontext` | Digital PDFs only (text-layer extraction via PyMuPDF — no OCR engine, no API key) |
-| `pip install 'ocrcontext[paddle]'` | + images, scanned PDFs (PaddleOCR, CPU/GPU) |
-| `pip install 'ocrcontext[trocr]'` | + handwriting fallback (Microsoft TrOCR via Transformers) |
+| `pip install ocrcontext` | Digital PDFs only (PyMuPDF text-layer — no OCR, no GPU, no API key) |
+| `pip install 'ocrcontext[paddle]'` | + printed images & scanned PDFs (PaddleOCR, CPU/GPU) |
+| `pip install 'ocrcontext[trocr]'` | + handwriting fallback (Microsoft TrOCR) |
 | `pip install 'ocrcontext[vision]'` | + handwriting primary (Google Cloud Vision) |
+| `pip install 'ocrcontext[cli]'` | + terminal CLI (`ocrcontext extract`) |
 | `pip install 'ocrcontext[all]'` | everything above |
 
-> **Images and scanned PDFs require `[paddle]`.**
-> The base install can only read digital PDFs (ones with a text layer). Passing an image to a
-> bare `pip install ocrcontext` will raise an `EngineError` with a clear install hint.
-
-Pick an LLM provider for refinement / extraction:
+Add an LLM provider for refinement and structured extraction:
 
 ```bash
 pip install langchain-openai        # or langchain-anthropic, langchain-ollama, ...
 ```
 
-No LLM provider is needed for raw OCR or digital PDF extraction.
+> **Images and scanned PDFs require `[paddle]`.** Passing an image file to a bare `pip install ocrcontext` raises an `EngineError` with a clear install hint.
 
-### Google Cloud Vision setup (for `[vision]`)
+### Google Cloud Vision (`[vision]`)
 
-Google Cloud Vision uses a service account instead of a simple API key.
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com/) → create a project (or pick an existing one)
-2. Enable the **Cloud Vision API** for that project
-3. Go to **IAM & Admin → Service Accounts** → create a service account
-4. On the service account page, go to **Keys → Add Key → Create new key → JSON** — download the file
-5. Point the env var at it:
+1. Enable the **Cloud Vision API** in [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a service account key (JSON) under IAM & Admin → Service Accounts → Keys
+3. Export the path:
 
 ```bash
-# Linux / macOS
-export GOOGLE_APPLICATION_CREDENTIALS="/path/to/your-service-account.json"
-
-# Windows (PowerShell)
-$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\path\to\your-service-account.json"
-
-# Windows (CMD)
-set GOOGLE_APPLICATION_CREDENTIALS=C:\path\to\your-service-account.json
+export GOOGLE_APPLICATION_CREDENTIALS="/path/to/key.json"   # Linux/macOS
+$env:GOOGLE_APPLICATION_CREDENTIALS = "C:\path\to\key.json" # PowerShell
 ```
 
-Then `[vision]` just works — no extra code needed:
+---
+
+## Quick start
+
+### Digital PDF
 
 ```python
 from ocrcontext import Analyzer
 
-analyzer = Analyzer()
-result = analyzer.analyze("handwritten_note.jpg", handwriting=True)
-print(result.text)
-```
-
-> For local development you can also use `gcloud auth application-default login` instead of a
-> service account file, if you have the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install) installed.
-
-## Usage
-
-### Digital PDF — no extra install needed
-
-```python
-from ocrcontext import Analyzer
-
-# Works with just: pip install ocrcontext
 result = Analyzer().analyze("document.pdf")
-print(result.text, result.pages, result.text_source)  # text_source == "pdf_text"
+print(result.text)          # extracted text
+print(result.pages)         # page count
+print(result.text_source)   # "pdf_text_layer"
 ```
 
-### Images and scanned PDFs — requires `[paddle]`
+### Image / scanned PDF
 
 ```bash
 pip install 'ocrcontext[paddle]'
@@ -138,57 +97,35 @@ pip install 'ocrcontext[paddle]'
 from ocrcontext import Analyzer
 
 result = Analyzer().analyze("scan.png")
-print(result.text, result.confidence, result.pages, result.text_source)
+print(result.text, result.confidence)
 ```
 
-### LLM-refined OCR — requires `[paddle]` + a provider
+### LLM-refined OCR
+
+Refinement fixes character-level OCR errors without paraphrasing, translating, or inventing.
+Emails, URLs, and IBANs are masked before the model sees them and restored verbatim after.
+Output that drifts too far from the source is rejected in favour of the raw OCR text.
 
 ```bash
 pip install 'ocrcontext[paddle]' langchain-openai
-```
-
-Refinement fixes OCR errors **without** paraphrasing, translating, or inventing text. Emails, URLs
-and IBANs are masked before the model sees them and restored verbatim after; output that drifts too
-far from the source is rejected in favour of the raw text.
-
-Set your API key once in the environment — `langchain-openai` (and every other provider) picks it
-up automatically:
-
-```bash
-# Linux / macOS
 export OPENAI_API_KEY="sk-..."
-
-# Windows (PowerShell)
-$env:OPENAI_API_KEY = "sk-..."
-
-# Windows (CMD)
-set OPENAI_API_KEY=sk-...
 ```
-
-Or pass it inline if you prefer (useful in notebooks):
-
-```python
-from langchain_openai import ChatOpenAI
-ChatOpenAI(api_key="sk-...", model="gpt-4o")
-```
-
-Then:
 
 ```python
 from langchain_openai import ChatOpenAI
 from ocrcontext import Analyzer
 
-analyzer = Analyzer(llm=ChatOpenAI(model="gpt-4o"), lang="en")
-result = analyzer.analyze("handwritten_note.jpg", handwriting=True)
+analyzer = Analyzer(llm=ChatOpenAI(model="gpt-4o-mini"), lang="en")
+result = analyzer.analyze("scan.jpg")
 
-print(result.text)        # refined
-print(result.raw_text)    # original OCR, kept alongside
+print(result.text)       # refined
+print(result.raw_text)   # original OCR output
+print(result.refined)    # True
 ```
 
 ### Structured extraction
 
-Digital PDF invoices work with just `pip install ocrcontext langchain-openai`.
-For image or scanned invoices add `[paddle]`.
+Hand the analyzer a Pydantic schema and get a populated instance back.
 
 ```python
 from langchain_openai import ChatOpenAI
@@ -196,63 +133,257 @@ from ocrcontext import Analyzer
 from ocrcontext.schemas import Invoice
 
 analyzer = Analyzer(llm=ChatOpenAI(model="gpt-4o-mini", temperature=0))
-invoice = analyzer.extract("invoice.pdf", schema=Invoice)   # -> Invoice instance
+invoice = analyzer.extract("invoice.pdf", schema=Invoice)
 
-print(invoice.total_amount, invoice.currency)
+print(invoice.supplier_name, invoice.total_amount, invoice.currency)
 for item in invoice.line_items:
     print(item.description, item.quantity, item.unit_price)
 ```
 
-Define your own schema with plain Pydantic — field descriptions *are* the prompt:
+Define your own schema — field descriptions are the prompt:
 
 ```python
 from pydantic import BaseModel, Field
 
-class Receipt(BaseModel):
-    merchant: str | None = Field(None, description="Store / merchant name")
-    date: str | None = Field(None, description="Purchase date, YYYY-MM-DD")
-    total: float | None = Field(None, description="Grand total")
+class ShippingLabel(BaseModel):
+    sender: str | None = Field(None, description="Sender full name and address")
+    recipient: str | None = Field(None, description="Recipient full name and address")
+    tracking_number: str | None = Field(None, description="Carrier tracking number")
 
-receipt = analyzer.extract("receipt.jpg", schema=Receipt)
+label = analyzer.extract("label.jpg", schema=ShippingLabel)
 ```
 
-### Same code, local model (no API key)
+### No API key? Use a local model
 
 ```python
 from langchain_ollama import ChatOllama
 from ocrcontext import Analyzer
 
 analyzer = Analyzer(llm=ChatOllama(model="llama3.1"))
-print(analyzer.analyze("scan.png").text)
+result = analyzer.analyze("scan.png")
+print(result.text)
 ```
+
+---
+
+## CLI
+
+Install the `[cli]` extra to use `ocrcontext` straight from the terminal — no Python script needed.
+
+```bash
+pip install 'ocrcontext[cli]'
+```
+
+**Extract plain text:**
+
+```bash
+ocrcontext extract invoice.pdf
+ocrcontext extract scan.png --output json
+```
+
+**Extract structured data with a built-in schema:**
+
+```bash
+ocrcontext extract invoice.pdf   --schema invoice
+ocrcontext extract receipt.jpg   --schema receipt
+ocrcontext extract contract.pdf  --schema contract
+ocrcontext extract passport.jpg  --schema idcard
+ocrcontext extract lab_report.pdf --schema medical
+```
+
+**Choose your LLM provider:**
+
+```bash
+ocrcontext extract invoice.pdf --schema invoice \
+  --provider openai --model gpt-4o-mini
+
+ocrcontext extract invoice.pdf --schema invoice \
+  --provider anthropic --model claude-haiku-4-5-20251001
+
+ocrcontext extract invoice.pdf --schema invoice \
+  --provider ollama --model llama3.1
+```
+
+**All options:**
+
+```
+ocrcontext extract FILE [OPTIONS]
+
+  --schema    -s   invoice | receipt | contract | idcard | medical
+  --lang      -l   Language code (default: en)
+  --handwriting    Force handwriting engine
+  --refine         auto (default) | yes | no
+  --output    -o   text (default) | json
+  --provider  -p   openai | anthropic | ollama | google
+  --model     -m   Model name (default: gpt-4o-mini)
+```
+
+---
+
+## LangChain integration
+
+`OCRContextLoader` is a drop-in LangChain `BaseLoader`. It slots into any LangChain pipeline — RAG, document Q&A, chain-of-thought — without glue code.
+
+```python
+from ocrcontext.loaders import OCRContextLoader
+
+# Plain OCR
+loader = OCRContextLoader("contract.pdf")
+docs = loader.load()  # -> [Document(page_content="...", metadata={...})]
+
+# With LLM refinement
+from langchain_openai import ChatOpenAI
+
+loader = OCRContextLoader(
+    "scan.pdf",
+    llm=ChatOpenAI(model="gpt-4o-mini"),
+    lang="en",
+    refine="yes",
+)
+docs = loader.load()
+print(docs[0].page_content)
+print(docs[0].metadata)
+# {
+#   "source": "scan.pdf",
+#   "text_source": "ocr",
+#   "pages": 3,
+#   "confidence": 0.94,
+#   "refined": True,
+#   "raw_text": "..."
+# }
+```
+
+**In a RAG pipeline:**
+
+```python
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from ocrcontext.loaders import OCRContextLoader
+
+docs = OCRContextLoader("annual_report.pdf").load()
+chunks = RecursiveCharacterTextSplitter(chunk_size=1000).split_documents(docs)
+vectorstore = FAISS.from_documents(chunks, OpenAIEmbeddings())
+```
+
+---
+
+## Built-in schemas
+
+Five ready-to-use Pydantic schemas with system prompts, importable from `ocrcontext.schemas`.
+Pass them directly to `analyzer.extract()` or the CLI `--schema` flag.
+
+### Invoice
+
+```python
+from ocrcontext.schemas import Invoice
+
+invoice = analyzer.extract("invoice.pdf", schema=Invoice)
+# invoice.supplier_name, .invoice_number, .invoice_date, .total_amount,
+# .currency, .tax_id, .tax_rate, .line_items (list[LineItem])
+```
+
+### Receipt
+
+```python
+from ocrcontext.schemas import Receipt
+
+receipt = analyzer.extract("receipt.jpg", schema=Receipt)
+# receipt.store_name, .date, .time, .total_amount, .tax_amount,
+# .subtotal, .payment_method, .currency, .items (list[ReceiptItem])
+```
+
+### Contract
+
+```python
+from ocrcontext.schemas import Contract
+
+contract = analyzer.extract("agreement.pdf", schema=Contract)
+# contract.title, .effective_date, .expiration_date, .contract_value,
+# .currency, .governing_law, .key_obligations,
+# .parties (list[ContractParty] with .name, .role)
+```
+
+### IdCard
+
+Supports national_id, passport, driver_license, residence_permit.
+
+```python
+from ocrcontext.schemas import IdCard
+
+card = analyzer.extract("passport.jpg", schema=IdCard)
+# card.document_type, .full_name, .date_of_birth, .gender,
+# .nationality, .document_number, .issue_date, .expiry_date,
+# .issuing_authority, .address
+```
+
+### MedicalReport
+
+```python
+from ocrcontext.schemas import MedicalReport
+
+report = analyzer.extract("lab_report.pdf", schema=MedicalReport)
+# report.patient_name, .patient_dob, .report_date, .doctor_name,
+# .institution, .diagnosis, .icd_codes (list[str]),
+# .medications (list[Medication]), .notes
+```
+
+---
 
 ## How it routes a document
 
 ```
-                ┌─────────────┐
-   document ───▶│   Analyzer  │
-                └──────┬──────┘
-                       ▼
-        ┌──────────────────────────────┐
-        │ 1. Digital PDF? ──► text layer (PyMuPDF, no OCR)
-        │                    └─► LLM refine AUTO-SKIPPED (exact text)
-        │ 2. Image / scanned PDF ──► PaddleOCR (preprocess +
-        │                            coverage-first + line-band fallback)
-        │ 3. Handwriting ──► Google Vision → TrOCR fallback
-        │ 4. (optional) LLM refine ──► fidelity-first, literal-safe
-        │ 5. (optional) extract(schema) ──► typed Pydantic model
-        └──────────────────────────────┘
+              ┌─────────────┐
+ document ───▶│   Analyzer  │
+              └──────┬──────┘
+                     ▼
+      ┌──────────────────────────────────────┐
+      │ 1. Digital PDF?                       │
+      │    └─▶ PyMuPDF text layer             │
+      │        LLM refine auto-skipped        │
+      │                                       │
+      │ 2. Image / scanned PDF?               │
+      │    └─▶ PaddleOCR                      │
+      │        (preprocess → coverage-first   │
+      │         → line-band fallback)         │
+      │                                       │
+      │ 3. Handwriting (explicit or auto)?    │
+      │    └─▶ Google Cloud Vision            │
+      │        → TrOCR fallback               │
+      │                                       │
+      │ 4. (optional) LLM refine              │
+      │    fidelity-first · literal-safe      │
+      │                                       │
+      │ 5. (optional) extract(schema)         │
+      │    └─▶ typed Pydantic model           │
+      └──────────────────────────────────────┘
 ```
 
-Multi-page documents are joined with `--- Page N ---` separators. Handwriting kicks in
-automatically when printed OCR returns too little text.
+Multi-page documents are joined with `--- Page N ---` separators.
+Handwriting kicks in automatically when printed OCR returns too little text.
+
+---
 
 ## Refinement modes
 
-`RefinementMode`: `conservative` (scans), `layout` (digital PDFs), `handwriting_prose`,
-`handwriting_layout`. The handwriting mode is auto-selected based on whether the text looks like a
-DIKW/pyramid diagram. Modes and prompts are ported verbatim from the production pipeline and tuned
-for fidelity.
+| Mode | When it's used |
+|---|---|
+| `conservative` | Scanned images — minimal char-level correction only |
+| `layout` | Digital PDFs — reconstruct clean structure |
+| `handwriting_layout` | Handwritten notes / lists / diagrams |
+| `handwriting_prose` | Handwritten poems / paragraphs / letters |
+
+Modes are auto-selected based on the document type and text content. The handwriting mode choice is driven by whether the text looks like a DIKW/pyramid diagram. All prompts are ported verbatim from the production pipeline.
+
+Override manually:
+
+```python
+from ocrcontext import Analyzer, RefinementMode
+
+result = analyzer.analyze("scan.png", mode=RefinementMode.CONSERVATIVE)
+```
+
+---
 
 ## Configuration
 
@@ -260,12 +391,15 @@ for fidelity.
 from ocrcontext import Analyzer, AnalyzerConfig
 
 cfg = AnalyzerConfig(
-    lang="tr",
-    prefer_pdf_text_layer=True,
-    auto_handwriting_fallback=True,
+    lang="tr",                        # default document language
+    prefer_pdf_text_layer=True,       # skip OCR when a text layer exists
+    auto_handwriting_fallback=True,   # retry with handwriting if OCR returns too little
+    refine_by_default=True,           # auto-refine whenever an LLM is configured
 )
 analyzer = Analyzer(llm=..., config=cfg)
 ```
+
+---
 
 ## Development
 
@@ -273,12 +407,13 @@ analyzer = Analyzer(llm=..., config=cfg)
 git clone https://github.com/BahadirKarsli/OCRContext
 cd OCRContext
 pip install -e '.[dev]'
-pytest            # runs without GPU/network — engines and LLM are faked
+pytest            # runs without GPU or network — engines and LLM are faked
 ruff check .
 ```
 
-See the [`examples/`](examples/) folder for runnable smoke tests (image OCR, structured extraction,
-and the PDF routing ladder).
+See [`examples/`](examples/) for runnable smoke tests (image OCR, structured extraction, PDF routing).
+
+---
 
 ## License
 
