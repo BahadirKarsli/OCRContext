@@ -11,7 +11,7 @@ from ocrcontext.cli import app, _parse_refine, _SCHEMAS
 
 PNG_BYTES = b"\x89PNG\r\n\x1a\n" + b"\x00" * 32
 
-runner = CliRunner(env={"NO_COLOR": "1"})
+runner = CliRunner()
 
 
 # ---------------------------------------------------------------------------

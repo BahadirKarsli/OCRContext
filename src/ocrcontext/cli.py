@@ -38,6 +38,7 @@ app = typer.Typer(
     help="OCR a document and optionally extract structured data.",
     no_args_is_help=True,
     add_completion=False,
+    rich_markup_mode=None,
 )
 
 
