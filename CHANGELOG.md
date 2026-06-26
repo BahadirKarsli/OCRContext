@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-06-26
+
+### Added
+- **`OCRContextLoader`** — LangChain `BaseLoader` integration. Drop-in loader for
+  any LangChain pipeline: `OCRContextLoader("file.pdf").load()` returns a
+  `Document` with OCR text and metadata (`source`, `text_source`, `pages`,
+  `confidence`, `refined`).
+- **Built-in extraction schemas** — four new ready-to-use Pydantic schemas with
+  system prompts, importable from `ocrcontext.schemas`:
+  - `Receipt` / `ReceiptItem` — store name, date, items, subtotal, tax, total,
+    payment method.
+  - `Contract` / `ContractParty` — parties, effective/expiry dates, value,
+    governing law, key obligations.
+  - `IdCard` — national_id / passport / driver_license / residence_permit with
+    ICD-standard date normalisation and ISO 3166-1 nationality codes.
+  - `MedicalReport` / `Medication` — diagnosis, ICD codes, prescriptions, notes.
+- **CLI** (`ocrcontext extract`) — terminal-first developer experience via the
+  new `[cli]` extra (`pip install "ocrcontext[cli]"`):
+  - `ocrcontext extract invoice.pdf` — plain OCR to stdout.
+  - `ocrcontext extract scan.pdf --schema receipt --output json` — structured
+    extraction as JSON.
+  - `--provider openai|anthropic|ollama|google --model <name>` — bring-your-own
+    LLM provider.
+  - `--handwriting`, `--lang`, `--refine auto|yes|no` flags.
+
 ## [0.1.0] - 2026-06-25
 
 Initial release — the document extraction core, decoupled from its web stack
@@ -39,5 +64,6 @@ into a standalone, LLM-agnostic library.
 - **Packaging** — optional extras `[paddle]`, `[trocr]`, `[vision]`, `[all]`;
   PEP 561 typed (`py.typed`); examples and a GPU/network-free test suite.
 
-[Unreleased]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/bahadirkarsli/ocrcontext/releases/tag/v0.1.0

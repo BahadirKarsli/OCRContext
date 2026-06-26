@@ -21,6 +21,7 @@ from __future__ import annotations
 from .analyzer import Analyzer
 from .config import AnalyzerConfig
 from .engines.registry import EngineRegistry
+from .loaders import OCRContextLoader
 from .exceptions import (
     EngineError,
     LLMNotConfiguredError,
@@ -31,12 +32,13 @@ from .exceptions import (
 )
 from .types import OcrResult, RefinementMode
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 __all__ = [
     "Analyzer",
     "AnalyzerConfig",
     "EngineRegistry",
+    "OCRContextLoader",
     "OcrResult",
     "RefinementMode",
     "OcrContextError",

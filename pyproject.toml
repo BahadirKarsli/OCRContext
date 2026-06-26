@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "ocrcontext"
-version = "0.1.0"
+version = "0.1.1"
 description = "Decoupled, LLM-agnostic document OCR + structured extraction. Vision and LLM parsing in 3 lines of code."
 readme = "README.md"
 license = { text = "MIT" }
@@ -60,8 +60,11 @@ vision = [
     "google-cloud-vision>=3.8.1",
     "opencv-python-headless>=4.8",
 ]
+cli = [
+    "typer>=0.12",
+]
 all = [
-    "ocrcontext[paddle,trocr,vision]",
+    "ocrcontext[paddle,trocr,vision,cli]",
 ]
 dev = [
     "pytest>=8.0",
@@ -70,6 +73,9 @@ dev = [
     "build>=1.2",
     "twine>=5.0",
 ]
+
+[project.scripts]
+ocrcontext = "ocrcontext.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/BahadirKarsli/OCRContext"

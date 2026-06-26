@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
+
 import pytest
 
 from ocrcontext.engines.base import OcrEngine, PageOcr
@@ -72,3 +75,15 @@ class FakeEngine(OcrEngine):
 @pytest.fixture
 def fake_chat():
     return FakeChatModel
+
+
+@pytest.fixture
+def ascii_tmp():
+    """Temp dir with a guaranteed ASCII path (works around Windows non-ASCII username)."""
+    try:
+        from ocrcontext.utils.files import short_path
+        base = short_path(Path(tempfile.gettempdir()))
+    except Exception:
+        base = Path(tempfile.gettempdir())
+    with tempfile.TemporaryDirectory(dir=base) as d:
+        yield Path(d)
