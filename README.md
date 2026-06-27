@@ -376,7 +376,7 @@ report = analyzer.extract("lab_report.pdf", schema=MedicalReport)
 ```
                      ┌────────────────────────┐
                      │ Analyzer               │
- Document ────>      │ route by document type │
+ Document  ──────>   │ route by document type │
                      └────────────────────────┘
                                   │
                                   ▼
