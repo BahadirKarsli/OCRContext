@@ -374,34 +374,34 @@ report = analyzer.extract("lab_report.pdf", schema=MedicalReport)
 ## How it routes a document
 
 ```
-┌────────────────────────┐
-             │ Analyzer               │
-document ───▶│ route by document type │
-             └────────────────────────┘
-                          │
-                          ▼
-     ┌─────────────────────────────────────────┐
-     │ Processing pipeline                     │
-     ├─────────────────────────────────────────┤
-     │ 1.  Digital PDF                         │
-     │        → PyMuPDF text layer             │
-     │          (LLM refine auto-skipped)      │
-     │                                         │
-     │ 2.  Image / scanned PDF                 │
-     │        → PaddleOCR                      │
-     │          preprocess → coverage-first    │
-     │                    → line-band fallback │
-     │                                         │
-     │ 3.  Handwriting  (explicit or auto)     │
-     │        → Google Cloud Vision            │
-     │          → PaddleOCR if Vision empty    │
-     │                                         │
-     │ 4.  LLM refine  (optional)              │
-     │          fidelity-first · literal-safe  │
-     │                                         │
-     │ 5.  extract(schema)  (optional)         │
-     │        → typed Pydantic model           │
-     └─────────────────────────────────────────┘
+                     ┌────────────────────────┐
+                     │ Analyzer               │
+ Document ────>      │ route by document type │
+                     └────────────────────────┘
+                                  │
+                                  ▼
+             ┌─────────────────────────────────────────┐
+             │ Processing pipeline                     │
+             ├─────────────────────────────────────────┤
+             │ 1.  Digital PDF                         │
+             │        → PyMuPDF text layer             │
+             │          (LLM refine auto-skipped)      │
+             │                                         │
+             │ 2.  Image / scanned PDF                 │
+             │        → PaddleOCR                      │
+             │          preprocess → coverage-first    │
+             │                    → line-band fallback │
+             │                                         │
+             │ 3.  Handwriting  (explicit or auto)     │
+             │        → Google Cloud Vision            │
+             │          → PaddleOCR if Vision empty    │
+             │                                         │
+             │ 4.  LLM refine  (optional)              │
+             │          fidelity-first · literal-safe  │
+             │                                         │
+             │ 5.  extract(schema)  (optional)         │
+             │        → typed Pydantic model           │
+             └─────────────────────────────────────────┘
 ```
 
 Multi-page documents are joined with `--- Page N ---` separators.
