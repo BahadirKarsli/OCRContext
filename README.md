@@ -39,11 +39,11 @@ print(result.text)
 
 **Structured invoice extraction from an image:**
 
-<img width="720" alt="Invoice extraction demo" src="https://github.com/user-attachments/assets/8e77ab83-fff3-4929-9a54-7f4a75acc16f" />
+<img width="100%" alt="Invoice extraction demo" src="https://github.com/user-attachments/assets/8e77ab83-fff3-4929-9a54-7f4a75acc16f" />
 
 **Digital PDF text extraction:**
 
-<img width="720" alt="PDF extraction demo" src="https://github.com/user-attachments/assets/84437bd0-9d24-4a2e-8e0c-0014c9e85820" />
+<img width="100%" alt="PDF extraction demo" src="https://github.com/user-attachments/assets/84437bd0-9d24-4a2e-8e0c-0014c9e85820" />
 
 ## Contents
 
