@@ -233,6 +233,11 @@ def extract(
 
     try:
         _info(f"file: {file_path.name}")
+
+        paddlex_cache = Path(os.environ.get("PADDLE_PDX_CACHE_HOME", Path.home() / ".paddlex"))
+        if not (paddlex_cache / "official_models").exists():
+            _info("first run: downloading OCR model (~90 MB), this may take a minute...")
+
         _info("OCR...")
 
         ocr_result = analyzer.analyze(
