@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [0.1.3] - 2026-06-27
+## [0.1.4] - 2026-06-27
 
 ### Added
 - **GPU acceleration** — `Analyzer(use_gpu=True)` routes PaddleOCR inference to a
@@ -95,7 +95,8 @@ into a standalone, LLM-agnostic library.
 - **Packaging** — optional extras `[paddle]`, `[trocr]`, `[vision]`, `[all]`;
   PEP 561 typed (`py.typed`); examples and a GPU/network-free test suite.
 
-[Unreleased]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.3...HEAD
+[Unreleased]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.4...HEAD
+[0.1.4]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.3...v0.1.4
 [0.1.3]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.2...v0.1.3
 [0.1.2]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.1...v0.1.2
 [0.1.1]: https://github.com/bahadirkarsli/ocrcontext/compare/v0.1.0...v0.1.1
