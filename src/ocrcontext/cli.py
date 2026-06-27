@@ -116,6 +116,13 @@ _SCHEMA_NAMES = list(_SCHEMAS)
 
 def _build_llm(provider: str, model: str):
     """Dynamically import the right LangChain provider class."""
+    _API_KEY_HINTS = {
+        "openai":    ("OPENAI_API_KEY",    "platform.openai.com/api-keys"),
+        "anthropic": ("ANTHROPIC_API_KEY", "console.anthropic.com/settings/keys"),
+        "google":    ("GOOGLE_API_KEY",    "aistudio.google.com/apikey"),
+        "ollama":    (None, None),
+    }
+
     try:
         if provider == "openai":
             from langchain_openai import ChatOpenAI  # type: ignore[import-untyped]
@@ -135,6 +142,19 @@ def _build_llm(provider: str, model: str):
             f"Install it with:  pip install langchain-{provider}",
             err=True,
         )
+        raise typer.Exit(code=1)
+    except Exception as exc:
+        msg = str(exc)
+        if "api_key" in msg.lower() or "credentials" in msg.lower() or "auth" in msg.lower():
+            env_var, url = _API_KEY_HINTS.get(provider, (None, None))
+            hint = f"Set it with:  $env:{env_var} = \"...\"" if env_var else ""
+            url_hint = f"\nGet a key at: {url}" if url else ""
+            typer.echo(
+                f"[ERROR] No API key found for '{provider}'.\n{hint}{url_hint}",
+                err=True,
+            )
+        else:
+            typer.echo(f"[ERROR] Failed to initialize '{provider}': {exc}", err=True)
         raise typer.Exit(code=1)
 
     typer.echo(
