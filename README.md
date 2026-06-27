@@ -35,8 +35,19 @@ print(result.text)
 
 `ocrcontext` is the extraction core of a production document-analysis platform, lifted out of its FastAPI/Next.js stack into a pure, pip-installable library. It handles OCR engine routing, fidelity-first LLM cleanup, and schema-based structured extraction — and gets out of your way.
 
+## Demo
+
+**Structured invoice extraction from an image:**
+
+<video src="https://github.com/user-attachments/assets/851c1aaf-9752-473f-9461-7b269b9ac42a" controls width="100%"></video>
+
+**Digital PDF text extraction:**
+
+<video src="https://github.com/user-attachments/assets/67580f43-ae84-40fc-aa7c-db0aeee50876" controls width="100%"></video>
+
 ## Contents
 
+- [Demo](#demo)
 - [Install](#install)
 - [CLI](#cli)
 - [Quick start (Python API)](#quick-start-python-api)
