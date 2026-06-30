@@ -263,48 +263,67 @@ print(result.text)
 
 ## LangChain integration
 
-`OCRContextLoader` is a drop-in LangChain `BaseLoader`. It slots into any LangChain pipeline — RAG, document Q&A, chain-of-thought — without glue code.
+`OCRContextLoader` is a drop-in LangChain `BaseLoader`. It slots into any LangChain pipeline — RAG, document Q&A, agents — without glue code.
 
 ```python
 from ocrcontext.loaders import OCRContextLoader
 
-# Plain OCR
+# Digital PDF — no LLM needed
 loader = OCRContextLoader("contract.pdf")
 docs = loader.load()  # -> [Document(page_content="...", metadata={...})]
+print(docs[0].metadata)
+# {
+#   "source": "contract.pdf",
+#   "text_source": "pdf_text_layer",
+#   "pages": 4,
+#   "confidence": 0.99,
+#   "refined": False,
+# }
 
-# With LLM refinement
+# Scanned PDF or image with LLM refinement
 from langchain_openai import ChatOpenAI
 
 loader = OCRContextLoader(
     "scan.pdf",
     llm=ChatOpenAI(model="gpt-4o-mini"),
     lang="en",
-    refine="yes",
+    refine=True,
 )
 docs = loader.load()
-print(docs[0].page_content)
-print(docs[0].metadata)
-# {
-#   "source": "scan.pdf",
-#   "text_source": "ocr",
-#   "pages": 3,
-#   "confidence": 0.94,
-#   "refined": True,
-#   "raw_text": "..."
-# }
+print(docs[0].page_content)   # LLM-refined OCR text
+print(docs[0].metadata["raw_text"])  # original OCR output before refinement
 ```
 
 **In a RAG pipeline:**
 
 ```python
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_core.vectorstores import InMemoryVectorStore
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.runnables import RunnablePassthrough
 from ocrcontext.loaders import OCRContextLoader
 
+# 1. OCR the document
 docs = OCRContextLoader("annual_report.pdf").load()
-chunks = RecursiveCharacterTextSplitter(chunk_size=1000).split_documents(docs)
-vectorstore = FAISS.from_documents(chunks, OpenAIEmbeddings())
+
+# 2. Chunk, embed, store
+chunks = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=100).split_documents(docs)
+vectorstore = InMemoryVectorStore.from_documents(chunks, OpenAIEmbeddings())
+retriever = vectorstore.as_retriever()
+
+# 3. QA chain
+llm = ChatOpenAI(model="gpt-4o-mini")
+prompt = ChatPromptTemplate.from_template(
+    "Answer using only the context below.\n\nContext: {context}\n\nQuestion: {question}"
+)
+chain = (
+    {"context": retriever, "question": RunnablePassthrough()}
+    | prompt | llm | StrOutputParser()
+)
+
+chain.invoke("What is the total revenue for Q3?")
 ```
 
 ---
